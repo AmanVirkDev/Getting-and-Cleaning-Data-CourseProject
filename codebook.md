@@ -22,6 +22,7 @@ The attached R script (run_analysis.R) performs the following to clean up the da
 
 #####R code for first step
 ...
+
 	if (!file.exists(ProjectDataDir)){
 	  if(!file.exists(ProjectZipFile)){
 		zipFileURL<-"http://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
@@ -29,6 +30,7 @@ The attached R script (run_analysis.R) performs the following to clean up the da
 	  }
 	  unzip(ProjectZipFile)
 	}
+	
 ...
 	
 #### Step Two: of code import downloaded text files to data frames and create following data frames
@@ -43,6 +45,7 @@ The attached R script (run_analysis.R) performs the following to clean up the da
 
 #####R code for step 2
 ... 
+
 	subject_test<-read.table(paste0(testData,"/subject_test.txt"))
 	x_test<-read.table(paste0(testData,"/X_test.txt"))
 	y_test<-read.table(paste0(testData,"/Y_test.txt"))
@@ -54,12 +57,14 @@ The attached R script (run_analysis.R) performs the following to clean up the da
 	features<-read.table(paste0(ProjectDataDir,"/features.txt"))
 	activity_labels<-read.table(paste0(ProjectDataDir,"/activity_labels.txt"))
 	names(activity_labels)<-c("activity_id","activity_labels")
+
 ...
 
 #### Third Step: Merge training and test datasets. Merged training data test data set contains 10299 rows and 561 columns
 
 ##### R code step 3
 ...
+
 	subject_data <- rbind(subject_test, subject_train)
 	names(subject_data) <- "subject"
 
@@ -70,40 +75,51 @@ The attached R script (run_analysis.R) performs the following to clean up the da
 	names(y_data)<-"activity_id"
 
 	data <- cbind(subject_data, y_data, x_data)
+
 ...
 
 #### Step Four: apply activity labels to activity id and subject id
 
 ##### R Code for step four
 ...
+
 	data<-suppressWarnings(merge(data,activity_labels,by.data="activity_id",by.activity_labels="activity_id"))
 	subject<-as.data.frame(data$subject)
 	activity<-as.data.frame(data$activity_label)
 	names(subject)<-"subject"
 	names(activity)<-"activity"
 	data<-cbind(subject,activity,data[,3:(ncol(data)-1)])
+	
 ... 
  
 #### Step Five: search mean and standard deviation (std) in variable names and create data set only for these variables. Final dataset contains 10299 rows and 81 columns
 
 ##### R Code for step five
 ...
+
 	matched <- grep("-mean|-std", names(data))
 	data_extract <- data[, c(1, 2, matched)]
+	
 ...
  
 #### Step Six: use reshape2 package for melting data set and create data set with subject_id, activity_label and all variable values in one column
 ...
+
 	reshaped = melt(data_extract, id = c("subject", "activity"))
+	
 ...
 
 #### Step Seven: Create summarized datasets tidy_data with 180 rows and 81 columns using following R code:
 ...
+
 	tidy_data = dcast(reshaped , subject + activity ~ variable, mean)
+	
 ...
 
 #### Step Eight: Write tidy_data data frame to tidy_data.txt file using following R Code
 ...
+
 	write.table(tidy_data, file="tidy_data.txt")
+	
 ...
 
