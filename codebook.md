@@ -14,13 +14,15 @@ The attached R script (run_analysis.R) performs the following to clean up the da
 	* testData: Test data directory path
 	* trainData: Train data directory path
 	
-1. Download zipped data from original data source:
+1. Download zipped data from original data source: 1
 	* First code checks if data source directory is already available in current working directory
 	* if data source directory is not available then code checks if original data source zip file is already exists in working directory
 	* if zip file doesn't exists then code downloads the file from original data source url
 	* if extracted data is not available then exracts the archived data.
 
-###R code for step 1
+
+#####R code for step 1
+*
 if (!file.exists(ProjectDataDir)){
   if(!file.exists(ProjectZipFile)){
     zipFileURL<-"http://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
@@ -28,8 +30,9 @@ if (!file.exists(ProjectDataDir)){
   }
   unzip(ProjectZipFile)
 }
+*
 	
-2. Second step of code import downloaded text files to data frames and create following data frames:
+2. Second step of code import downloaded text files to data frames and create following data frames: 2
 	* Subject_test: read subject_test.txt file to subject_test data frame. This data frame contains subject_id of test data set.
 	* x_test: read X_test.txt file to x_test data frame. This data frame contains test data set. Test data sets 2947 rows and 561 columns.
 	* y_test: read Y_test.txt file to y_test data frame.This data frame contains activity_id of subjects in test data set.
@@ -39,7 +42,8 @@ if (!file.exists(ProjectDataDir)){
 	* features: read features.txt file to features data frame. This data frame contains variable labels for x_test and x_train data frames.
 	* activity_labels: read activity_labels.txt file to activity_labels data frame. This data frame contains activity labels for activity_id. this data set contains 6 rows of activity labels.
 
-###R code for step 2
+#####R code for step 2
+*
 subject_test<-read.table(paste0(testData,"/subject_test.txt"))
 x_test<-read.table(paste0(testData,"/X_test.txt"))
 y_test<-read.table(paste0(testData,"/Y_test.txt"))
@@ -51,7 +55,7 @@ y_train<-read.table(paste0(trainData,"/Y_train.txt"))
 features<-read.table(paste0(ProjectDataDir,"/features.txt"))
 activity_labels<-read.table(paste0(ProjectDataDir,"/activity_labels.txt"))
 names(activity_labels)<-c("activity_id","activity_labels")
-
+*
 
 3. Merge training and test datasets. Merged training data test data set contains 10299 rows and 561 columns
 
