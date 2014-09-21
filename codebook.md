@@ -67,6 +67,7 @@ names(y_data)<-"activity_id"
 
 data <- cbind(subject_data, y_data, x_data)
 
+<ul>
 <li> apply activity labels to activity id and subject id </li>
 
 ### R Code for step 4
@@ -92,3 +93,4 @@ tidy_data = dcast(reshaped , subject + activity ~ variable, mean)
 <li> Write tidy_data data frame to tidy_data.txt file using following R Code </li>
 write.table(tidy_data, file="tidy_data.txt")
 
+</ul>
