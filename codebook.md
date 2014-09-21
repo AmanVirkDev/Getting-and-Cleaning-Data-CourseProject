@@ -1,39 +1,94 @@
+##Code book for perparing tidy data set
+
+###Data source information:
 Source of the original data: https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip. 
 Original description: http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones
 
+
 The attached R script (run_analysis.R) performs the following to clean up the data:
 
-1. Merges the training and test sets to create one data set, namely
-train/X_train.txt with test/X_test.txt -- the result is a 10299 x 561 data frame, as in the original description ("Number of Instances: 10299" and "Number of Attributes: 561")
+* run_analysis.R file use package "reshape2" for summarizing data
+* Following 4 variables are used in code for assign data source name and path:
+	* ProjectZipFile: Archive data file name
+	* ProjectDataDir: Extracted data source directory
+	* testData: Test data directory path
+	* trainData: Train data directory path
+	
+1. Download zipped data from original data source:
+	* First code checks if data source directory is already available in current working directory
+	* if data source directory is not available then code checks if original data source zip file is already exists in working directory
+	* if zip file doesn't exists then code downloads the file from original data source url
+	* if extracted data is not available then exracts the archived data.
 
-train/subject_train.txt with test/subject_test.txt -- the result is a 10299 x 1 data frame with subject IDs,
+###R code for step 1
+if (!file.exists(ProjectDataDir)){
+  if(!file.exists(ProjectZipFile)){
+    zipFileURL<-"http://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+    download.file(zipFileURL,ProjectZipFile)
+  }
+  unzip(ProjectZipFile)
+}
+	
+2. Second step of code import downloaded text files to data frames and create following data frames:
+	* Subject_test: read subject_test.txt file to subject_test data frame. This data frame contains subject_id of test data set.
+	* x_test: read X_test.txt file to x_test data frame. This data frame contains test data set. Test data sets 2947 rows and 561 columns.
+	* y_test: read Y_test.txt file to y_test data frame.This data frame contains activity_id of subjects in test data set.
+	* Subject_train: read subject_train.txt file to subject_train data frame. This data frame contains subject_id of training data set.
+	* x_train: read X_train.txt file to x_train data frame. This data frame contains training data set. Train data set contains 7352 rows and 561 columns.
+	* y_train: read Y_train.txt file to y_train data frame. This data frame contains activity_id of subjects in training data set
+	* features: read features.txt file to features data frame. This data frame contains variable labels for x_test and x_train data frames.
+	* activity_labels: read activity_labels.txt file to activity_labels data frame. This data frame contains activity labels for activity_id. this data set contains 6 rows of activity labels.
 
-train/y_train.txt with test/y_test.txt -- the result is also a 10299 x 1 data frame with activity IDs.
+###R code for step 2
+subject_test<-read.table(paste0(testData,"/subject_test.txt"))
+x_test<-read.table(paste0(testData,"/X_test.txt"))
+y_test<-read.table(paste0(testData,"/Y_test.txt"))
 
-2. Reads file features.txt and extracts only the measurements on the mean and standard deviation for each measurement.
-The result is a 10299 x 66 data frame, because only 66 out of 561 attributes are measurements on the mean and standard deviation. All measurements appear to be floating point numbers in the range (-1, 1).
+subject_train<-read.table(paste0(trainData,"/subject_train.txt"))
+x_train<-read.table(paste0(trainData,"/X_train.txt"))
+y_train<-read.table(paste0(trainData,"/Y_train.txt"))
 
-3. Reads activity_labels.txt and applies descriptive activity names to name the activities in the data set:
-walking
-walkingupstairs
-walkingdownstairs
-sitting
-standing
-laying
+features<-read.table(paste0(ProjectDataDir,"/features.txt"))
+activity_labels<-read.table(paste0(ProjectDataDir,"/activity_labels.txt"))
+names(activity_labels)<-c("activity_id","activity_labels")
 
-4. The script also appropriately labels the data set with descriptive names: all feature names (attributes) and activity names are converted to lower case, underscores and brackets () are removed.
-Then it merges the 10299x66 data frame containing features with 10299x1 data frames containing activity labels and subject IDs.
 
-The result is saved as merged_clean_data.txt, a 10299x68 data frame such that the first column contains subject IDs, the second column activity names, and the last 66 columns are measurements. Subject IDs are integers between 1 and 30 inclusive. Names of the attributes are similar to the following:
+3. Merge training and test datasets. Merged training data test data set contains 10299 rows and 561 columns
 
-tbodyacc-mean-x
-tbodyacc-mean-y
-tbodyacc-mean-z
-tbodyacc-std-x
-tbodyacc-std-y
-tbodyacc-std-z
-tgravityacc-mean-x
-tgravityacc-mean-y
+### R code for step 3
+subject_data <- rbind(subject_test, subject_train)
+names(subject_data) <- "subject"
 
-5. Finally, the script creates a 2nd, independent tidy data set with the average of each measurement for each activity and each subject.
-The result is saved as data_set_with_the_averages.txt, a 180x68 data frame, where as before, the first column contains subject IDs, the second column contains activity names (see below), and then the averages for each of the 66 attributes are in columns 3...68. There are 30 subjects and 6 activities, thus 180 rows in this data set with averages.
+x_data <- rbind(x_test, x_train)
+names(x_data) <- features[, 2]
+
+y_data <- rbind(y_test,y_train)
+names(y_data)<-"activity_id"
+
+data <- cbind(subject_data, y_data, x_data)
+
+4. apply activity labels to activity id and subject id
+
+### R Code for step 4
+data<-suppressWarnings(merge(data,activity_labels,by.data="activity_id",by.activity_labels="activity_id"))
+subject<-as.data.frame(data$subject)
+activity<-as.data.frame(data$activity_label)
+names(subject)<-"subject"
+names(activity)<-"activity"
+data<-cbind(subject,activity,data[,3:(ncol(data)-1)])
+ 
+5. search mean and standard deviation (std) in variable names and create data set only for these variables. Final dataset contains 10299 rows and 81 columns
+
+### R Code for step 5
+matched <- grep("-mean|-std", names(data))
+data_extract <- data[, c(1, 2, matched)]
+
+6. use reshape2 package for melting data set and create data set with subject_id, activity_label and all variable values in one column
+reshaped = melt(data_extract, id = c("subject", "activity"))
+
+7. Create summarized datasets tidy_data with 180 rows and 81 columns using following R code:
+tidy_data = dcast(reshaped , subject + activity ~ variable, mean)
+
+8. Write tidy_data data frame to tidy_data.txt file using following R Code
+write.table(tidy_data, file="tidy_data.txt")
+
