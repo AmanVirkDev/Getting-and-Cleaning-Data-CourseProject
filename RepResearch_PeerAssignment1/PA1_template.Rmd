@@ -1,0 +1,105 @@
+---
+title: "PA1_template"
+output: html_document
+---
+
+Peer Assignment 1
+=================
+
+set the libraries required for the code
+
+```{r}
+library(ggplot2)
+library(lattice)
+library(plyr)
+```
+
+
+Loading and preprocessing the data. Also aggregate the steps per day
+
+```{r}
+Activity_Csv_File<-"./activity.csv"
+Activity<-read.csv(Activity_Csv_File,header=TRUE)
+Steps_perday<-aggregate(Activity$steps,by=list(Activity$date),FUN=sum,na.rm=TRUE)
+names(Steps_perday)<-c("date","steps")
+
+```
+
+
+####What is mean total number of steps taken per day?
+
+Histogram showing total number of steps taken each day
+
+```{r}
+th<-theme(panel.grid.minor=element_blank(),panel.grid.major=element_blank(),text=element_text(size=12))
+p<-ggplot(Steps_perday,aes(x=steps,fill=..count..))+geom_histogram()
+gt<-ggtitle("Histogram of steps taken each day")
+myplot<-p+gt+th+ylab("Count of Steps")
+myplot
+```
+
+Summary statistics below showing the mean and median total number of steps  taken per day
+
+```{r}
+summary(Steps_perday$steps)
+```
+
+####What is the average daily activity pattern?
+
+Aggregate the data by Interval to calculate avg steps by 5-minute interval
+
+```{r}
+AvgStep_Interval<-aggregate(Activity$steps,by=list(Activity$interval),FUN=mean,na.rm=TRUE)
+names(AvgStep_Interval)<-c("interval","Avg_Steps")
+```
+
+Time series plot showing average steps by 5-minute interval
+
+```{r}
+p<-ggplot(AvgStep_Interval,aes(x=interval,y=Avg_Steps))+geom_line()
+gt<-ggtitle("Average Steps by Interval")
+myplot<-p+gt+th+ylab("Average Steps")+xlab("Interval")
+myplot
+```
+
+Number of missing rows
+ 
+```{r} 
+sum(is.na(Activity$steps))
+```
+
+
+####Imputing missing values
+
+Impute the missing values by mean of 5-minute interval
+
+```{r}
+merged <- arrange(join(Activity, AvgStep_Interval), interval)
+merged$steps[is.na(merged$steps)] <- merged$Avg_Steps[is.na(merged$steps)]
+Activity.WithoutNA<-merged
+```
+
+Below is the histogram and summary statistics from new data set after imputing na values 
+
+```{r}
+New_Steps_perday<-aggregate(Activity.WithoutNA$steps,by=list(Activity.WithoutNA$date),FUN=sum)
+names(New_Steps_perday)<-c("date","steps")
+
+th<-theme(panel.grid.minor=element_blank(),panel.grid.major=element_blank(),text=element_text(size=12))
+p<-ggplot(New_Steps_perday,aes(x=steps,fill=..count..))+geom_histogram()
+gt<-ggtitle("Histogram of steps taken each day")
+myplot<-p+gt+th+ylab("Count of Steps")
+myplot
+summary(New_Steps_perday$steps)
+```
+
+
+####Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+weekdays <- weekdays(as.Date(Activity.WithoutNA$date))
+data_with_weekdays <- transform(Activity.WithoutNA, day=weekdays)
+data_with_weekdays$wk <- ifelse(data_with_weekdays$day %in% c("Saturday", "Sunday"),"weekend", "weekday")
+average_by_interval_wk <- ddply(data_with_weekdays, .(interval, wk), summarise, steps=mean(steps))
+xyplot(steps ~ interval | wk, data = average_by_interval_wk, layout = c(1, 2), type="l")
+```
